@@ -4,24 +4,28 @@ body {
   background: #f5f5f7;
 }
 
-.diagram-panel {
-  /* card already has shadow, etc. */
-}
-
+/* Diagram card layout */
 .diagram-panel .card-body {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
+/* Wrapper should consume all available height in its column */
 .diagram-image-wrapper {
-  max-height: 100%;
+  flex: 1 1 auto;
+  min-height: 0;           /* important for flex children to size correctly */
+  width: 100%;
 }
 
+/* Make the SVG as big as possible while respecting container bounds */
 .diagram-image {
   display: block;
   max-width: 100%;
-  height: auto;
+  max-height: 100%;
+  width: auto;
+  height: 100%;
+  /* with max-width + height:100% this effectively "contain"s the SVG in both dimensions */
 }
 
 .diagram-caption {
