@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Code Label PDF Generator</title>
+
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+    crossorigin="anonymous"
+  />
+
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bwip-js/dist/bwip-js-min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      padding: 20px;
+      background: #f5f5f7;
+    }
+    .diagram-panel svg {
+      border-radius: 0.5rem;
+      background: #fff;
+      box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+    }
+    .diagram-caption {
+      font-size: 0.8rem;
+      color: #555;
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container-fluid">
+    <div class="mb-4">
+      <h1 class="h3 mb-1">Code Label PDF Generator</h1>
+      <p class="text-muted mb-0">Generate sheets of DataMatrix or QR labels with configurable layout presets.</p>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-lg-7">
+        <div id="root"></div>
+      </div>
+
+      <div class="col-lg-5">
+        <div class="card shadow-sm diagram-panel">
+          <div class="card-body">
+            <h2 class="h6 mb-3">Parameter illustration (not to scale)</h2>
+            <svg viewBox="0 0 400 260" width="100%" height="auto">
+              <defs>
+                <marker id="arrow" markerWidth="6" markerHeight="6" refX="5" refY="3"
+                        orient="auto" markerUnits="strokeWidth">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="#333" />
+                </marker>
+              </defs>
+
+              <!-- Page -->
+              <rect x="60" y="20" width="260" height="200" fill="#fafafa" stroke="#333" />
+
+              <!-- Content area (inside page margins) -->
+              <rect x="80" y="40" width="220" height="160"
+                    fill="none" stroke="#777" stroke-dasharray="4,3" />
+
+              <!-- Label outer (dotted grid line) -->
+              <rect x="80" y="40" width="90" height="90"
+                    fill="none" stroke="#999" stroke-dasharray="3,3" />
+
+              <!-- Inner content area = label area minus padding -->
+              <rect x="90" y="50" width="70" height="70"
+                    fill="#f3f6ff" stroke="#b0c4ff" />
+
+              <!-- Code inside content area -->
+              <rect x="95" y="55" width="30" height="30" fill="#ddd" stroke="#555" />
+
+              <!-- Example text line inside content area -->
+              <line x1="95" y1="92" x2="150" y2="92" stroke="#555" stroke-width="1.4" />
+
+              <!-- MARGINS -->
+              <!-- Horizontal margin -->
+              <line x1="60" y1="150" x2="80" y2="150"
+                    stroke="#333" stroke-width="1.2"
+                    marker-start="url(#arrow)" marker-end="url(#arrow)" />
+              <text x="40" y="144" text-anchor="start" font-size="11" fill="#000">
+                Horizontal
+              </text>
+              <text x="40" y="156" text-anchor="start" font-size="11" fill="#000">
+                margin (mm)
+              </text>
+
+              <!-- Vertical margin -->
+              <line x1="190" y1="20" x2="190" y2="40"
+                    stroke="#333" stroke-width="1.2"
+                    marker-start="url(#arrow)" marker-end="url(#arrow)" />
+              <text x="196" y="24" font-size="11" fill="#000">
+                Vertical margin (mm)
+              </text>
+
+              <!-- PADDING (INSIDE LABEL, LIKE CSS) -->
+              <!-- Horizontal padding arrow (left inside label) -->
+              <line x1="80" y1="120" x2="90" y2="120"
+                    stroke="#2b7" stroke-width="1.2"
+                    marker-start="url(#arrow)" marker-end="url(#arrow)" />
+              <text x="60" y="116" text-anchor="start" font-size="11" fill="#2b7">
+                Horizontal
+              </text>
+              <text x="60" y="128" text-anchor="start" font-size="11" fill="#2b7">
+                padding (mm)
+              </text>
+
+              <!-- Vertical padding arrow (top inside label) -->
+              <line x1="175" y1="40" x2="175" y2="50"
+                    stroke="#2b7" stroke-width="1.2"
+                    marker-start="url(#arrow)" marker-end="url(#arrow)" />
+              <text x="181" y="44" font-size="11" fill="#2b7">
+                Vertical padding (mm)
+              </text>
+
+              <!-- CODE SIZE arrow -->
+              <line x1="110" y1="70" x2="195" y2="70"
+                    stroke="#c33" stroke-width="1.2"
+                    marker-end="url(#arrow)" />
+              <text x="201" y="68" font-size="11" fill="#c33">
+                Code size (mm)
+              </text>
+
+              <!-- FONT SIZE arrow -->
+              <line x1="135" y1="92" x2="220" y2="102"
+                    stroke="#36c" stroke-width="1.2"
+                    marker-end="url(#arrow)" />
+              <text x="226" y="106" font-size="11" fill="#36c">
+                Font size (pt)
+              </text>
+
+              <!-- Other labels as faint dotted boxes -->
+              <rect x="170" y="40" width="90" height="90"
+                    fill="none" stroke="#ddd" stroke-dasharray="3,3" />
+              <rect x="80" y="130" width="90" height="70"
+                    fill="none" stroke="#eee" stroke-dasharray="3,3" />
+            </svg>
+            <div class="diagram-caption">
+              Each dotted rectangle is a label. Padding is the internal distance between the
+              label boundary and its content (text + code), similar to CSS padding.
+              Margins are the distance between the page edges and the grid of labels.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const e = React.createElement;
+
+function App() {
+  const [labels, setLabels] = React.useState("");
+
+  // Layout & code settings
+  const [columns, setColumns] = React.useState(3);
+  const [marginH, setMarginH] = React.useState(10); // mm
+  const [marginV, setMarginV] = React.useState(10); // mm
+  const [paddingH, setPaddingH] = React.useState(3); // mm
+  const [paddingV, setPaddingV] = React.useState(3); // mm
+  const [fontSize, setFontSize] = React.useState(10);     // pt
+  const [codeSizeMm, setCodeSizeMm] = React.useState(12); // mm
+  const [dpi, setDpi] = React.useState(200);
+  const [paper, setPaper] = React.useState("A4");
+  const [codeType, setCodeType] = React.useState("datamatrix"); // "datamatrix" or "qrcode"
+  const [textPosition, setTextPosition] = React.useState("top"); // "top", "bottom", "left", "right"
+
+  // Presets
+  const [presets, setPresets] = React.useState([]);
+  const [currentPresetName, setCurrentPresetName] = React.useState("Default");
+  const [presetNameInput, setPresetNameInput] = React.useState("Default");
+
+  const defaultPreset = {
+    name: "Default",
+    columns: 3,
+    marginH: 10,
+    marginV: 10,
+    paddingH: 3,
+    paddingV: 3,
+    fontSize: 10,
+    codeSizeMm: 12,
+    dpi: 200,
+    paper: "A4",
+    codeType: "datamatrix",
+    textPosition: "top",
+  };
+
+  function applyPresetToState(p) {
+    setColumns(p.columns);
+    setMarginH(p.marginH);
+    setMarginV(p.marginV);
+    setPaddingH(p.paddingH);
+    setPaddingV(p.paddingV);
+    setFontSize(p.fontSize);
+    setCodeSizeMm(p.codeSizeMm);
+    setDpi(p.dpi);
+    setPaper(p.paper);
+    setCodeType(p.codeType);
+    setTextPosition(p.textPosition);
+  }
+
+  React.useEffect(function() {
+    // Load presets from localStorage
+    var storedPresets = [];
+    var raw = window.localStorage.getItem("labelPresets");
+    if (raw) {
+      try {
+        storedPresets = JSON.parse(raw) || [];
+      } catch (e) {
+        storedPresets = [];
+      }
+    }
+
+    if (!Array.isArray(storedPresets) || storedPresets.length === 0) {
+      storedPresets = [defaultPreset];
+    }
+
+    // Ensure default exists
+    if (!storedPresets.some(function(p) { return p.name === defaultPreset.name; })) {
+      storedPresets.unshift(defaultPreset);
+    }
+
+    setPresets(storedPresets);
+
+    var lastName = window.localStorage.getItem("labelLastPreset") || defaultPreset.name;
+    var presetToApply = storedPresets.find(function(p) { return p.name === lastName; }) || storedPresets[0];
+
+    applyPresetToState(presetToApply);
+    setCurrentPresetName(presetToApply.name);
+    setPresetNameInput(presetToApply.name);
+  }, []);
+
+  const handleSelectPreset = function(name) {
+    setCurrentPresetName(name);
+    var p = presets.find(function(pr) { return pr.name === name; });
+    if (p) {
+      applyPresetToState(p);
+      setPresetNameInput(p.name);
+      window.localStorage.setItem("labelLastPreset", p.name);
+    }
+  };
+
+  const handleSavePreset = function() {
+    var name = (presetNameInput || "").trim();
+    if (!name) {
+      name = currentPresetName || "Preset";
+    }
+
+    var presetData = {
+      name: name,
+      columns: columns,
+      marginH: marginH,
+      marginV: marginV,
+      paddingH: paddingH,
+      paddingV: paddingV,
+      fontSize: fontSize,
+      codeSizeMm: codeSizeMm,
+      dpi: dpi,
+      paper: paper,
+      codeType: codeType,
+      textPosition: textPosition,
+    };
+
+    var existingIndex = presets.findIndex(function(p) { return p.name === name; });
+    var next = presets.slice();
+
+    if (existingIndex >= 0) {
+      next[existingIndex] = presetData;
+    } else {
+      next.push(presetData);
+    }
+
+    setPresets(next);
+    setCurrentPresetName(name);
+    setPresetNameInput(name);
+    window.localStorage.setItem("labelPresets", JSON.stringify(next));
+    window.localStorage.setItem("labelLastPreset", name);
+  };
+
+  const handleDeletePreset = function() {
+    if (currentPresetName === "Default") {
+      return;
+    }
+    var next = presets.filter(function(p) { return p.name !== currentPresetName; });
+    var fallback = next.find(function(p) { return p.name === "Default"; });
+    if (!fallback) {
+      fallback = next[0] || defaultPreset;
+    }
+
+    var finalPresets = next.length ? next : [defaultPreset];
+    setPresets(finalPresets);
+    applyPresetToState(fallback);
+    setCurrentPresetName(fallback.name);
+    setPresetNameInput(fallback.name);
+    window.localStorage.setItem("labelPresets", JSON.stringify(finalPresets));
+    window.localStorage.setItem("labelLastPreset", fallback.name);
+  };
+
+  const generate = async function() {
+    var list = labels.split(/\n+/).map(function(s) { return s.trim(); }).filter(Boolean);
+    if (!list.length) {
+      alert("No labels provided.");
+      return;
+    }
+
+    var jsPDF = window.jspdf.jsPDF;
+
+    // Paper size
+    var pageWmm = 210, pageHmm = 297;
+    if (paper === "LETTER") {
+      pageWmm = 216;
+      pageHmm = 279;
+    }
+
+    var mmToPt = function(mm) { return mm * 2.83465; };
+
+    var pageW = mmToPt(pageWmm);
+    var pageH = mmToPt(pageHmm);
+
+    var pdf = new jsPDF({
+      unit: "pt",
+      format: [pageW, pageH],
+    });
+
+    pdf.setFont("courier", "normal");
+
+    // Margins and padding in points
+    var marginHPt = mmToPt(marginH);
+    var marginVPt = mmToPt(marginV);
+    var paddingHPt = mmToPt(paddingH);
+    var paddingVPt = mmToPt(paddingV);
+    var codeSide = mmToPt(codeSizeMm);
+
+    var contentW = pageW - 2 * marginHPt;
+    var contentH = pageH - 2 * marginVPt;
+
+    var textHeight = fontSize * 1.2;
+
+    // Label width: columns evenly split
+    var cellW = contentW / columns;
+
+    // Label height: padding top + text + code + padding bottom
+    var cellH = 2 * paddingVPt + textHeight + codeSide;
+
+    // Number of rows that fit
+    var rows = Math.floor(contentH / cellH);
+    var perPage = rows * columns;
+
+    if (rows <= 0) {
+      alert("Settings produce zero rows per page. Adjust margins, padding, or code/text size.");
+      return;
+    }
+
+    var canvas = document.createElement("canvas");
+    var ctx = canvas.getContext("2d");
+
+    for (var i = 0; i < list.length; i++) {
+      if (i > 0 && i % perPage === 0) {
+        pdf.addPage();
+        pdf.setFont("courier", "normal");
+      }
+
+      var item = list[i];
+      var indexOnPage = i % perPage;
+      var col = indexOnPage % columns;
+      var row = Math.floor(indexOnPage / columns);
+
+      var xLabel = marginHPt + col * cellW;
+      var yLabel = marginVPt + row * cellH;
+
+      // Label boundary (dotted)
+      try {
+        if (pdf.setLineDash) {
+          pdf.setLineDash([2, 2], 0);
+        }
+      } catch (e) {}
+      pdf.setDrawColor(150);
+      pdf.setLineWidth(0.3);
+      pdf.rect(xLabel, yLabel, cellW, cellH);
+      try {
+        if (pdf.setLineDash) {
+          pdf.setLineDash([]);
+        }
+      } catch (e) {}
+
+      // Inner content area (after padding)
+      var xInner = xLabel + paddingHPt;
+      var yInner = yLabel + paddingVPt;
+      var innerW = cellW - 2 * paddingHPt;
+      var innerH = cellH - 2 * paddingVPt;
+
+      // Prepare code image
+      var px = dpi * 1.2;
+      canvas.width = px;
+      canvas.height = px;
+
+      var bcid = codeType === "qrcode" ? "qrcode" : "datamatrix";
+
+      try {
+        bwipjs.toCanvas(canvas, {
+          bcid: bcid,
+          text: item,
+          scale: 4,
+          includetext: false,
+        });
+      } catch (err) {
+        alert("Failed to generate code for: " + item);
+        throw err;
+      }
+
+      var img = canvas.toDataURL("image/png");
+      pdf.setFontSize(fontSize);
+
+      if (textPosition === "top") {
+        var textY_top = yInner + textHeight;
+        var textX_top = xInner + innerW / 2;
+        pdf.text(item, textX_top, textY_top, { align: "center" });
+
+        var codeX_top = xInner + innerW / 2 - codeSide / 2;
+        var codeY_top = textY_top + 4;
+        pdf.addImage(img, "PNG", codeX_top, codeY_top, codeSide, codeSide);
+      } else if (textPosition === "bottom") {
+        var codeX_bottom = xInner + innerW / 2 - codeSide / 2;
+        var codeY_bottom = yInner;
+        pdf.addImage(img, "PNG", codeX_bottom, codeY_bottom, codeSide, codeSide);
+
+        var textY_bottom = yInner + innerH - 4;
+        var textX_bottom = xInner + innerW / 2;
+        pdf.text(item, textX_bottom, textY_bottom, { align: "center" });
+      } else if (textPosition === "left") {
+        var codeX_left = xInner + innerW - codeSide;
+        var codeY_left = yInner + (innerH - codeSide) / 2;
+        pdf.addImage(img, "PNG", codeX_left, codeY_left, codeSide, codeSide);
+
+        var textY_left = yInner + innerH / 2 + fontSize / 2 - 2;
+        var textX_left = xInner + 2;
+        pdf.text(item, textX_left, textY_left, { align: "left" });
+      } else if (textPosition === "right") {
+        var codeX_right = xInner;
+        var codeY_right = yInner + (innerH - codeSide) / 2;
+        pdf.addImage(img, "PNG", codeX_right, codeY_right, codeSide, codeSide);
+
+        var textY_right = yInner + innerH / 2 + fontSize / 2 - 2;
+        var textX_right = xInner + codeSide + 4;
+        pdf.text(item, textX_right, textY_right, { align: "left" });
+      }
+    }
+
+    pdf.save("labels.pdf");
+  };
+
+  return e("div", { className: "card shadow-sm" },
+    e("div", { className: "card-body" },
+
+      // Preset controls
+      e("div", { className: "row g-3 mb-3 align-items-end" },
+        e("div", { className: "col-md-4" },
+          e("label", { className: "form-label mb-1" }, "Preset"),
+          e("select", {
+            className: "form-select form-select-sm",
+            value: currentPresetName,
+            onChange: function(ev) { handleSelectPreset(ev.target.value); },
+          },
+            presets.map(function(p) {
+              return e("option", { key: p.name, value: p.name }, p.name);
+            })
+          )
+        ),
+        e("div", { className: "col-md-4" },
+          e("label", { className: "form-label mb-1" }, "Preset name"),
+          e("input", {
+            type: "text",
+            className: "form-control form-control-sm",
+            value: presetNameInput,
+            onChange: function(ev) { setPresetNameInput(ev.target.value); },
+          })
+        ),
+        e("div", { className: "col-md-4 d-grid" },
+          e("label", { className: "form-label mb-1 invisible" }, "Save"),
+          e("button", { className: "btn btn-sm btn-outline-primary", onClick: handleSavePreset },
+            "Save preset"
+          )
+        )
+      ),
+
+      e("div", { className: "mb-3" },
+        e("label", { className: "form-label" }, "Labels (one per line)"),
+        e("textarea", {
+          className: "form-control",
+          rows: 4,
+          value: labels,
+          onChange: function(ev) { setLabels(ev.target.value); },
+        })
+      ),
+
+      e("div", { className: "row g-3" },
+        e("div", { className: "col-md-3" },
+          e("label", { className: "form-label" }, "Columns"),
+          e("input", {
+            type: "number",
+            className: "form-control",
+            value: columns,
+            onChange: function(ev) { setColumns(Math.max(1, Number(ev.target.value) || 1)); },
+          })
+        ),
+        e("div", { className: "col-md-3" },
+          e("label", { className: "form-label" }, "Font size (pt)"),
+          e("input", {
+            type: "number",
+            className: "form-control",
+            value: fontSize,
+            onChange: function(ev) { setFontSize(Number(ev.target.value) || 1); },
+          })
+        ),
+        e("div", { className: "col-md-3" },
+          e("label", { className: "form-label" }, "Code size (mm)"),
+          e("input", {
+            type: "number",
+            className: "form-control",
+            value: codeSizeMm,
+            onChange: function(ev) { setCodeSizeMm(Number(ev.target.value) || 1); },
+          })
+        ),
+        e("div", { className: "col-md-3" },
+          e("label", { className: "form-label" }, "DPI"),
+          e("input", {
+            type: "number",
+            className: "form-control",
+            value: dpi,
+            onChange: function(ev) { setDpi(Number(ev.target.value) || 72); },
+          })
+        )
+      ),
+
+      e("div", { className: "row g-3 mt-1" },
+        e("div", { className: "col-md-3" },
+          e("label", { className: "form-label" }, "Horizontal margin (mm)"),
+          e("input", {
+            type: "number",
+            className: "form-control",
+            value: marginH,
+            onChange: function(ev) { setMarginH(Number(ev.target.value) || 0); },
+          })
+        ),
+        e("div", { className: "col-md-3" },
+          e("label", { className: "form-label" }, "Vertical margin (mm)"),
+          e("input", {
+            type: "number",
+            className: "form-control",
+            value: marginV,
+            onChange: function(ev) { setMarginV(Number(ev.target.value) || 0); },
+          })
+        ),
+        e("div", { className: "col-md-3" },
+          e("label", { className: "form-label" }, "Padding X inside (mm)"),
+          e("input", {
+            type: "number",
+            className: "form-control",
+            value: paddingH,
+            onChange: function(ev) { setPaddingH(Number(ev.target.value) || 0); },
+          })
+        ),
+        e("div", { className: "col-md-3" },
+          e("label", { className: "form-label" }, "Padding Y inside (mm)"),
+          e("input", {
+            type: "number",
+            className: "form-control",
+            value: paddingV,
+            onChange: function(ev) { setPaddingV(Number(ev.target.value) || 0); },
+          })
+        )
+      ),
+
+      e("div", { className: "row g-3 mt-1" },
+        e("div", { className: "col-md-4" },
+          e("label", { className: "form-label" }, "Code type"),
+          e("select", {
+            className: "form-select",
+            value: codeType,
+            onChange: function(ev) { setCodeType(ev.target.value); },
+          },
+            e("option", { value: "datamatrix" }, "DataMatrix"),
+            e("option", { value: "qrcode" }, "QR Code")
+          )
+        ),
+        e("div", { className: "col-md-4" },
+          e("label", { className: "form-label" }, "Text position"),
+          e("select", {
+            className: "form-select",
+            value: textPosition,
+            onChange: function(ev) { setTextPosition(ev.target.value); },
+          },
+            e("option", { value: "top" }, "Top"),
+            e("option", { value: "bottom" }, "Bottom"),
+            e("option", { value: "left" }, "Left"),
+            e("option", { value: "right" }, "Right")
+          )
+        ),
+        e("div", { className: "col-md-4" },
+          e("label", { className: "form-label" }, "Paper size"),
+          e("select", {
+            className: "form-select",
+            value: paper,
+            onChange: function(ev) { setPaper(ev.target.value); },
+          },
+            e("option", { value: "A4" }, "A4"),
+            e("option", { value: "LETTER" }, "Letter")
+          )
+        )
+      ),
+
+      e("div", { className: "d-flex justify-content-between align-items-center mt-4" },
+        e("button", {
+          className: "btn btn-primary",
+          onClick: generate
+        }, "Generate PDF"),
+
+        e("button", {
+          className: "btn btn-outline-danger",
+          onClick: handleDeletePreset,
+          disabled: currentPresetName === "Default"
+        }, currentPresetName === "Default" ? "Cannot delete default preset" : "Delete current preset")
+      )
+    )
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(e(App));
+</script>
+
+</body>
+</html>
