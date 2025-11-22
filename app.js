@@ -310,7 +310,7 @@ function App() {
 
   return e(
     "div",
-    { className: "card shadow-sm" },
+    { className: "card shadow-sm h-100 w-100" },   // <- h-100 here
     e(
       "div",
       { className: "card-body" },
