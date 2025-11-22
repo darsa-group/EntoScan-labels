@@ -21,6 +21,9 @@ function App() {
   const [currentPresetName, setCurrentPresetName] = React.useState("Default");
   const [presetNameInput, setPresetNameInput] = React.useState("Default");
 
+  // For import file input
+  const fileInputRef = React.useRef(null);
+
   const defaultPreset = {
     name: "Default",
     columns: 3,
@@ -147,6 +150,90 @@ function App() {
     setPresetNameInput(fallback.name);
     window.localStorage.setItem("labelPresets", JSON.stringify(finalPresets));
     window.localStorage.setItem("labelLastPreset", fallback.name);
+  };
+
+  // --- NEW: export presets as JSON file ---
+  const handleExportPresets = function () {
+    const data = {
+      presets: presets,
+      lastPreset: currentPresetName,
+      version: 1,
+    };
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    const safeName = (currentPresetName || "presets").replace(/[^\w\-]+/g, "_");
+    a.download = "label-presets-" + safeName + ".json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // --- NEW: open file picker for import ---
+  const handleImportClick = function () {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  // --- NEW: handle imported file ---
+  const handleImportFileChange = function (ev) {
+    const file = ev.target.files && ev.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function () {
+      try {
+        const text = reader.result;
+        const parsed = JSON.parse(text);
+
+        let importedPresets = [];
+        let importedLast = null;
+
+        if (Array.isArray(parsed)) {
+          importedPresets = parsed;
+        } else if (parsed && Array.isArray(parsed.presets)) {
+          importedPresets = parsed.presets;
+          importedLast = parsed.lastPreset || null;
+        } else {
+          alert("Invalid presets file format.");
+          return;
+        }
+
+        // Ensure default exists
+        if (!importedPresets.some((p) => p.name === defaultPreset.name)) {
+          importedPresets.unshift(defaultPreset);
+        }
+
+        const finalPresets = importedPresets;
+        setPresets(finalPresets);
+        window.localStorage.setItem("labelPresets", JSON.stringify(finalPresets));
+
+        const lastName =
+          importedLast ||
+          window.localStorage.getItem("labelLastPreset") ||
+          defaultPreset.name;
+
+        const presetToApply =
+          finalPresets.find((p) => p.name === lastName) || finalPresets[0];
+
+        applyPresetToState(presetToApply);
+        setCurrentPresetName(presetToApply.name);
+        setPresetNameInput(presetToApply.name);
+        window.localStorage.setItem("labelLastPreset", presetToApply.name);
+      } catch (err) {
+        console.error(err);
+        alert("Could not read presets file.");
+      } finally {
+        // reset input so selecting the same file again still triggers change
+        ev.target.value = "";
+      }
+    };
+    reader.readAsText(file);
   };
 
   const generate = async function () {
@@ -310,15 +397,24 @@ function App() {
 
   return e(
     "div",
-    { className: "card shadow-sm h-100 w-100" },   // <- h-100 here
+    { className: "card shadow-sm h-100 w-100" },
     e(
       "div",
       { className: "card-body" },
 
-      // Preset controls
+      // Hidden file input for import
+      e("input", {
+        type: "file",
+        accept: "application/json",
+        style: { display: "none" },
+        ref: fileInputRef,
+        onChange: handleImportFileChange,
+      }),
+
+      // Preset controls + export/import
       e(
         "div",
-        { className: "row g-3 mb-3 align-items-end" },
+        { className: "row g-3 mb-2 align-items-end" },
         e(
           "div",
           { className: "col-md-4" },
@@ -362,6 +458,29 @@ function App() {
             },
             "Save preset"
           )
+        )
+      ),
+
+      e(
+        "div",
+        { className: "d-flex gap-2 mb-3" },
+        e(
+          "button",
+          {
+            type: "button",
+            className: "btn btn-sm btn-outline-secondary",
+            onClick: handleExportPresets,
+          },
+          "Export presets"
+        ),
+        e(
+          "button",
+          {
+            type: "button",
+            className: "btn btn-sm btn-outline-secondary",
+            onClick: handleImportClick,
+          },
+          "Import presets"
         )
       ),
 
