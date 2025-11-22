@@ -18,27 +18,44 @@
 </head>
 
 <body>
+  <!-- Top navigation bar with icon -->
+  <nav class="navbar navbar-light bg-white shadow-sm mb-3 rounded-3">
+    <div class="container-fluid">
+      <a class="navbar-brand d-flex align-items-center" href="#">
+        <img src="icon.svg" alt="App icon" width="28" height="28" class="me-2">
+        <span>Code Label PDF Generator</span>
+      </a>
+    </div>
+  </nav>
+
   <div class="container-fluid">
-    <div class="mb-4">
-      <h1 class="h3 mb-1">Code Label PDF Generator</h1>
-      <p class="text-muted mb-0">
-        Generate sheets of DataMatrix or QR labels with configurable layout presets.
-      </p>
+    <!-- Title row with icon -->
+    <div class="mb-4 d-flex align-items-start gap-2">
+      <img src="icon.svg" alt="App icon" width="32" height="32" class="mt-1">
+      <div>
+        <h1 class="h4 mb-1">Code Label PDF Generator</h1>
+        <p class="text-muted mb-0">
+          Generate sheets of DataMatrix or QR labels with configurable layout presets.
+        </p>
+      </div>
     </div>
 
-    <div class="row g-4">
-      <!-- React app -->
-      <div class="col-lg-7">
-        <div id="root"></div>
+    <div class="row g-4 align-items-stretch">
+      <!-- React app column -->
+      <div class="col-lg-7 d-flex">
+        <!-- React will render a full-height card inside this -->
+        <div id="root" class="flex-grow-1 d-flex"></div>
       </div>
 
       <!-- Diagram column -->
-      <div class="col-lg-5">
-        <div class="card shadow-sm diagram-panel">
-          <div class="card-body">
-            <h2 class="h6 mb-3">Parameter illustration (not to scale)</h2>
-            <img src="instructions.svg" alt="Layout parameter illustration" class="img-fluid" />
-            <div class="diagram-caption">
+      <div class="col-lg-5 d-flex">
+        <div class="card shadow-sm diagram-panel flex-grow-1 h-100">
+          <div class="card-body d-flex flex-column align-items-center">
+            <h2 class="h6 mb-3 text-center w-100">Parameter illustration (not to scale)</h2>
+            <div class="diagram-image-wrapper flex-grow-1 d-flex align-items-center justify-content-center w-100">
+              <img src="instructions.svg" alt="Layout parameter illustration" class="img-fluid diagram-image" />
+            </div>
+            <div class="diagram-caption text-center mt-2">
               Each dotted rectangle is a label. Padding is the internal distance between the
               label boundary and its content (text + code), similar to CSS padding.
               Margins are the distance between the page edges and the grid of labels.
